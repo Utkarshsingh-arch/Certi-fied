@@ -1,0 +1,30 @@
+{
+  "name": "unichain",
+  "version": "1.0.0",
+  "description": "UniChain — Blockchain-Based Inter-University Certificate Verification System",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "start": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix blockchain test",
+    "blockchain:compile": "npm --prefix blockchain run compile || (cd blockchain && npx hardhat compile)",
+    "blockchain:test": "npm --prefix blockchain test",
+    "blockchain:node": "npm --prefix blockchain run node || (cd blockchain && npx hardhat node)",
+    "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.ts --network localhost",
+    "frontend:dev": "npm --prefix frontend run dev",
+    "frontend:build": "npm --prefix frontend run build",
+    "frontend:preview": "npm --prefix frontend run preview"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "solidity",
+    "hardhat",
+    "react",
+    "academic-credential-verification",
+    "consortium"
+  ],
+  "author": "",
+  "license": "MIT"
+}
