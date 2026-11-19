@@ -23,7 +23,7 @@ import { truncateHex } from "../services/cryptoHash";
 import { StatusBadge } from "../components/StatusBadge";
 
 export const AdminDashboard: React.FC = () => {
-  const { address, isConnected, isAdmin, connectWallet } = useWallet();
+  const { address, isConnected, isAdmin, connectWallet, selectDemoAccount } = useWallet();
 
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -111,18 +111,27 @@ export const AdminDashboard: React.FC = () => {
   if (!isConnected) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-          <UserCheck className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Consortium Admin Portal</h2>
-          <p className="text-slate-600 mb-6 max-w-md mx-auto text-sm">
-            Please connect the Consortium Administrator MetaMask account to manage participating universities.
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <UserCheck className="w-16 h-16 text-slate-400 mx-auto mb-2" />
+          <h2 className="text-2xl font-bold text-slate-900">Consortium Admin Portal</h2>
+          <p className="text-slate-600 max-w-md mx-auto text-sm">
+            Please connect the Consortium Administrator account to manage participating universities.
           </p>
-          <button
-            onClick={connectWallet}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition"
-          >
-            Connect Admin Wallet
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              onClick={connectWallet}
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition"
+            >
+              Connect Wallet
+            </button>
+            <button
+              onClick={() => selectDemoAccount("admin")}
+              className="w-full sm:w-auto px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Instant Connect (Consortium Admin)</span>
+            </button>
+          </div>
         </div>
       </div>
     );

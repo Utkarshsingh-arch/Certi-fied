@@ -25,7 +25,7 @@ import { calculateDocumentHash, truncateHex } from "../services/cryptoHash";
 import { CertificateFormData } from "../types";
 
 export const IssuerDashboard: React.FC = () => {
-  const { address, isConnected, isIssuer, institution, connectWallet } = useWallet();
+  const { address, isConnected, isIssuer, institution, connectWallet, selectDemoAccount } = useWallet();
 
   // Form state
   const [formData, setFormData] = useState<CertificateFormData>({
@@ -172,18 +172,27 @@ export const IssuerDashboard: React.FC = () => {
   if (!isConnected) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-          <Building2 className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">University Issuer Portal</h2>
-          <p className="text-slate-600 mb-6 max-w-md mx-auto text-sm">
-            Please connect your authorized institutional MetaMask wallet to issue and manage academic certificates.
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <Building2 className="w-16 h-16 text-slate-400 mx-auto mb-2" />
+          <h2 className="text-2xl font-bold text-slate-900">University Issuer Portal</h2>
+          <p className="text-slate-600 max-w-md mx-auto text-sm">
+            Please connect your authorized institutional wallet to issue and manage academic certificates.
           </p>
-          <button
-            onClick={connectWallet}
-            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition"
-          >
-            Connect University Wallet
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button
+              onClick={connectWallet}
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition"
+            >
+              Connect Wallet
+            </button>
+            <button
+              onClick={() => selectDemoAccount("presidencyUni")}
+              className="w-full sm:w-auto px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2"
+            >
+              <Building2 className="w-4 h-4" />
+              <span>Instant Connect (Presidency Uni)</span>
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -1,14 +1,23 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { ethers, BrowserProvider } from "ethers";
+import { ethers, BrowserProvider, Wallet } from "ethers";
 import { Institution, WalletState } from "../types";
-import { fetchUserRoles, switchOrAddNetwork } from "../blockchain/ethereum";
+import {
+  fetchUserRoles,
+  switchOrAddNetwork,
+  DEMO_ACCOUNTS,
+  setActiveDemoWallet,
+  getReadOnlyProvider,
+} from "../blockchain/ethereum";
 import { LOCAL_CHAIN_ID } from "../blockchain/contractConfig";
+import { WalletConnectModal } from "../components/WalletConnectModal";
 
 interface WalletContextType extends WalletState {
-  connectWallet: () => Promise<void>;
+  connectWallet: () => void;
   disconnectWallet: () => void;
   refreshState: () => Promise<void>;
   switchToConsortiumNetwork: () => Promise<void>;
+  openConnectModal: () => void;
+  selectDemoAccount: (key: keyof typeof DEMO_ACCOUNTS) => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -21,6 +30,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isIssuer, setIsIssuer] = useState<boolean>(false);
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const loadAccountData = useCallback(async (account: string) => {
     try {
@@ -39,9 +49,10 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [address, loadAccountData]);
 
-  const connectWallet = async () => {
+  // Connect via MetaMask
+  const connectMetaMask = async () => {
     if (typeof window === "undefined" || !window.ethereum) {
-      setError("MetaMask is not installed. Please install the MetaMask extension.");
+      setError("MetaMask extension not found. Please install MetaMask or choose an Instant Demo Account.");
       return;
     }
 
@@ -49,25 +60,69 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setError(null);
 
     try {
+      setActiveDemoWallet(null); // Clear demo wallet to use MetaMask
       const provider = new BrowserProvider(window.ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
       const network = await provider.getNetwork();
+      let currentChainId = Number(network.chainId);
+      setChainId(currentChainId);
+
+      // Auto switch network if needed
+      if (currentChainId !== LOCAL_CHAIN_ID) {
+        try {
+          await switchOrAddNetwork();
+          const updatedNet = await provider.getNetwork();
+          currentChainId = Number(updatedNet.chainId);
+          setChainId(currentChainId);
+        } catch (switchErr) {
+          console.warn("Network switch skipped:", switchErr);
+        }
+      }
 
       if (accounts.length > 0) {
         const currentAccount = accounts[0];
         setAddress(currentAccount);
-        setChainId(Number(network.chainId));
         await loadAccountData(currentAccount);
       }
+      setIsModalOpen(false);
     } catch (err: any) {
-      console.error("Error connecting wallet:", err);
-      setError(err?.message || "Failed to connect wallet");
+      console.error("Error connecting MetaMask:", err);
+      setError(err?.message || "Failed to connect MetaMask");
     } finally {
       setIsConnecting(false);
     }
   };
 
+  // Connect via Instant Demo Account (real Hardhat signed transactions)
+  const selectDemoAccount = async (key: keyof typeof DEMO_ACCOUNTS) => {
+    setIsConnecting(true);
+    setError(null);
+
+    try {
+      const accountConfig = DEMO_ACCOUNTS[key];
+      const provider = getReadOnlyProvider();
+      const demoWallet = new Wallet(accountConfig.privateKey, provider);
+
+      setActiveDemoWallet(demoWallet);
+      setAddress(demoWallet.address);
+      setChainId(LOCAL_CHAIN_ID);
+      await loadAccountData(demoWallet.address);
+
+      setIsModalOpen(false);
+    } catch (err: any) {
+      console.error("Failed to select demo account:", err);
+      setError(err?.message || "Failed to activate demo account");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const connectWallet = () => {
+    setIsModalOpen(true);
+  };
+
   const disconnectWallet = () => {
+    setActiveDemoWallet(null);
     setAddress(null);
     setIsAdmin(false);
     setIsIssuer(false);
@@ -102,14 +157,14 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
-    const handleChainChanged = (_chainIdHex: string) => {
+    const handleChainChanged = () => {
       window.location.reload();
     };
 
     window.ethereum.on("accountsChanged", handleAccountsChanged);
     window.ethereum.on("chainChanged", handleChainChanged);
 
-    // Initial check if already connected
+    // Initial silent check
     const checkConnected = async () => {
       try {
         const provider = new BrowserProvider(window.ethereum);
@@ -151,9 +206,19 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         disconnectWallet,
         refreshState,
         switchToConsortiumNetwork,
+        openConnectModal: () => setIsModalOpen(true),
+        selectDemoAccount,
       }}
     >
       {children}
+      <WalletConnectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConnectMetaMask={connectMetaMask}
+        onSelectDemoAccount={selectDemoAccount}
+        isConnecting={isConnecting}
+        error={error}
+      />
     </WalletContext.Provider>
   );
 };
